@@ -8,6 +8,7 @@ import { Dashboard } from './pages/Dashboard';
 import { InternManagement } from './pages/InternManagement';
 import { TaskManagement } from './pages/TaskManagement';
 import { Evaluations } from './pages/Evaluations';
+import { UserApprovals } from './pages/UserApprovals';
 
 function App() {
   return (
@@ -26,6 +27,11 @@ function App() {
             } />
             <Route path="tasks" element={<TaskManagement />} />
             <Route path="evaluations" element={<Evaluations />} />
+            <Route path="approvals" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <UserApprovals />
+              </ProtectedRoute>
+            } />
           </Route>
           
           <Route path="*" element={<Navigate to="/" replace />} />

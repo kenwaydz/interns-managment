@@ -2,11 +2,48 @@ from rest_framework import viewsets, permissions
 from django.db.models import Q
 from .models import Department, InternProfile, SupervisorProfile, Task, Evaluation
 from .serializers import DepartmentSerializer, InternProfileSerializer, SupervisorProfileSerializer, TaskSerializer, EvaluationSerializer
+from accounts.serializers import UserSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class DepartmentViewSet(viewsets.ModelViewSet):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
+class UserApprovalViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role != 'ADMIN':
+            return User.objects.none()
+        return User.objects.filter(is_active=False).exclude(role='ADMIN')
+
+    from rest_framework.decorators import action
+    from rest_framework.response import Response
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        if request.user.role != 'ADMIN':
+            return self.Response({"error": "Admin only"}, status=403)
+        user = self.get_object()
+        user.is_active = True
+        user.save()
+        return self.Response({"status": "user approved"})
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        if request.user.role != 'ADMIN':
+            return self.Response({"error": "Admin only"}, status=403)
+        user = self.get_object()
+        user.delete()
+        return self.Response({"status": "user rejected"})
 
 class SupervisorProfileViewSet(viewsets.ModelViewSet):
     queryset = SupervisorProfile.objects.select_related('user', 'department').all()

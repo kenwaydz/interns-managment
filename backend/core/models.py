@@ -18,9 +18,17 @@ class SupervisorProfile(models.Model):
         return f"Supervisor: {self.user.username}"
 
 class InternProfile(models.Model):
+    class InternshipType(models.TextChoices):
+        BTS = 'BTS', 'BTS (30 months)'
+        BT = 'BT', 'BT (24 months)'
+        CAP = 'CAP', 'CAP (18 months)'
+        CMP = 'CMP', 'CMP (12 months)'
+        UNIVERSITY = 'UNIVERSITY', 'Stagiaire Universitaire (Max 2 months)'
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='intern_profile')
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, related_name='interns')
     supervisor = models.ForeignKey(SupervisorProfile, on_delete=models.SET_NULL, null=True, related_name='interns')
+    internship_type = models.CharField(max_length=20, choices=InternshipType.choices, default=InternshipType.BTS)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     major = models.CharField(max_length=150, blank=True)
@@ -37,6 +45,7 @@ class Task(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    report = models.TextField(blank=True)
     supervisor = models.ForeignKey(SupervisorProfile, on_delete=models.CASCADE, related_name='assigned_tasks')
     intern = models.ForeignKey(InternProfile, on_delete=models.CASCADE, related_name='tasks')
     created_at = models.DateTimeField(auto_now_add=True)

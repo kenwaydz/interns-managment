@@ -44,7 +44,7 @@ class TaskSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Task
-        fields = ['id', 'title', 'description', 'status', 'created_at', 'updated_at', 'intern_details', 'supervisor_details', 'intern']
+        fields = ['id', 'title', 'description', 'status', 'report', 'created_at', 'updated_at', 'intern_details', 'supervisor_details', 'intern']
         read_only_fields = ('supervisor',)
 
 class EvaluationSerializer(serializers.ModelSerializer):

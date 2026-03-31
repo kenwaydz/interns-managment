@@ -8,6 +8,7 @@ export const TaskManagement = () => {
     const [interns, setInterns] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [newTask, setNewTask] = useState({ title: '', description: '', intern: '' });
+    const [taskReports, setTaskReports] = useState({});
 
     useEffect(() => {
         const fetchData = async () => {
@@ -26,13 +27,21 @@ export const TaskManagement = () => {
         fetchData();
     }, [user.role]);
 
-    const updateStatus = async (taskId, newStatus) => {
+    const updateStatus = async (taskId, newStatus, reportText = "") => {
         try {
-            await api.patch(`tasks/${taskId}/`, { status: newStatus });
-            setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+            const payload = { status: newStatus };
+            if (reportText) {
+                payload.report = reportText;
+            }
+            const res = await api.patch(`tasks/${taskId}/`, payload);
+            setTasks(tasks.map(t => t.id === taskId ? res.data : t));
         } catch (err) {
             console.error(err);
         }
+    };
+    
+    const handleReportChange = (taskId, text) => {
+        setTaskReports({ ...taskReports, [taskId]: text });
     };
 
     const handleCreateTask = async (e) => {
@@ -118,6 +127,14 @@ export const TaskManagement = () => {
                                 <StatusBadge status={task.status} />
                             </div>
                             <p style={{color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1rem'}}>{task.description}</p>
+                            
+                            {task.report && (
+                                <div style={{marginBottom: '1rem', background: 'var(--bg-card)', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)'}}>
+                                    <h4 style={{fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '0.25rem'}}>Intern's Report</h4>
+                                    <p style={{fontSize: '0.875rem', whiteSpace: 'pre-wrap', color: 'var(--text-color)'}}>{task.report}</p>
+                                </div>
+                            )}
+
                             <div style={{fontSize: '0.875rem', fontWeight: 500}}>
                                 Assignee: {task.intern_details?.user?.first_name || 'Intern'} {task.intern_details?.user?.last_name || ''}
                             </div>
@@ -131,9 +148,20 @@ export const TaskManagement = () => {
                                     </button>
                                 )}
                                 {task.status === 'IN_PROGRESS' && (
-                                    <button onClick={() => updateStatus(task.id, 'COMPLETED')} className="btn" style={{flex: 1, fontSize: '0.875rem', background: 'var(--secondary)', color: 'white'}}>
-                                        Mark Completed
-                                    </button>
+                                    <div className="flex gap-2 flex-col" style={{flex: 1}}>
+                                        <div style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>Optional: Task Completion Report</div>
+                                        <textarea 
+                                            rows="3"
+                                            className="input-field"
+                                            placeholder="Describe what you accomplished..."
+                                            value={taskReports[task.id] || ''}
+                                            onChange={e => handleReportChange(task.id, e.target.value)} 
+                                            style={{fontSize: '0.875rem', resize: 'vertical'}} 
+                                        />
+                                        <button onClick={() => updateStatus(task.id, 'COMPLETED', taskReports[task.id])} className="btn" style={{fontSize: '0.875rem', background: 'var(--secondary)', color: 'white', marginTop: '0.5rem'}}>
+                                            Mark Completed
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}

@@ -81,6 +81,17 @@ export const Dashboard = () => {
                         Make sure to check your Tasks board for new assignments from your supervisor.
                     </p>
                 )}
+                {user.role === 'ADMIN' && (
+                    <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#EFF6FF', borderRadius: '0.5rem', border: '1px solid #BFDBFE' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#1E40AF', marginBottom: '0.5rem' }}>Administrator Actions</h3>
+                        <p style={{ fontSize: '0.875rem', color: '#1E40AF', marginBottom: '1rem' }}>
+                            You have pending account registrations that require your attention.
+                        </p>
+                        <a href="/approvals" className="btn btn-primary" style={{ display: 'inline-block', width: 'auto', fontSize: '0.875rem' }}>
+                            Manage User Approvals
+                        </a>
+                    </div>
+                )}
             </div>
         </div>
     );
