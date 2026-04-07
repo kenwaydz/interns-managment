@@ -3,6 +3,8 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Users, LayoutDashboard, CheckSquare, LogOut, FileText } from 'lucide-react';
 
+import logo from '../assets/logo.png';
+
 const SidebarItem = ({ to, icon, label }) => (
     <NavLink 
         to={to} 
@@ -25,8 +27,9 @@ export const Layout = () => {
     return (
         <div className="app-layout">
             <aside className="sidebar">
-                <div className="sidebar-header">
-                    <span style={{ fontSize: '24px' }}>🏢</span> IAMS
+                <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <img src={logo} alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} /> 
+                    <span style={{ fontSize: '18px', fontWeight: 'bold' }}>Internes Manager</span>
                 </div>
                 <nav className="sidebar-nav flex-col">
                     <SidebarItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" />

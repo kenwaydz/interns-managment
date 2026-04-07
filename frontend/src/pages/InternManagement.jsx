@@ -69,8 +69,48 @@ export const InternManagement = () => {
 
     return (
         <div>
-            <div className="page-header">
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h1 className="page-title">Interns Management</h1>
+                {user?.role === 'ADMIN' && (
+                    <button 
+                        className="btn btn-primary" 
+                        onClick={async () => {
+                            try {
+                                const response = await api.get('interns/export_excel/', {
+                                    responseType: 'blob',
+                                });
+                                // Create a download link for the blob
+                                const url = window.URL.createObjectURL(new Blob([response.data]));
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.setAttribute('download', `interns_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
+                                window.URL.revokeObjectURL(url);
+                            } catch (err) {
+                                console.error('Download failed:', err);
+                                // If the error response is a blob, we need to read it to see the error message
+                                if (err.response?.data instanceof Blob) {
+                                    const reader = new FileReader();
+                                    reader.onload = () => {
+                                        try {
+                                            const errorData = JSON.parse(reader.result);
+                                            alert(`Download failed: ${errorData.error || 'Server error'}`);
+                                        } catch (e) {
+                                            alert('Download failed: Internal server error (500)');
+                                        }
+                                    };
+                                    reader.readAsText(err.response.data);
+                                } else {
+                                    alert('Failed to connect to the server for download.');
+                                }
+                            }
+                        }}
+                    >
+                        Download Excel Report
+                    </button>
+                )}
             </div>
 
             {showModal && selectedIntern && (

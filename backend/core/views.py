@@ -1,9 +1,13 @@
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.db.models import Q
+from django.http import HttpResponse
 from .models import Department, InternProfile, SupervisorProfile, Task, Evaluation
 from .serializers import DepartmentSerializer, InternProfileSerializer, SupervisorProfileSerializer, TaskSerializer, EvaluationSerializer
 from accounts.serializers import UserSerializer
 from django.contrib.auth import get_user_model
+import openpyxl
 
 User = get_user_model()
 
@@ -84,6 +88,49 @@ class InternProfileViewSet(viewsets.ModelViewSet):
             user.last_name = user_data.get('last_name', user.last_name)
             user.email = user_data.get('email', user.email)
             user.save()
+
+    @action(detail=False, methods=['get'])
+    def export_excel(self, request):
+        if request.user.role != 'ADMIN':
+            return Response({"error": "Only admins can export data."}, status=403)
+            
+        try:
+            # Create a workbook and add a worksheet
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Interns"
+            
+            # Define headers
+            headers = ["Intern Name", "Email", "Assigned Department", "Supervisor", "Internship Type", "Start Date", "End Date"]
+            ws.append(headers)
+            
+            # Fetch data
+            interns = InternProfile.objects.select_related('user', 'department', 'supervisor', 'supervisor__user').all()
+            for intern in interns:
+                name = f"{intern.user.first_name} {intern.user.last_name}".strip() or intern.user.username
+                email = intern.user.email
+                dept = intern.department.name if intern.department else "null"
+                
+                if intern.supervisor and intern.supervisor.user:
+                    supervisor_name = f"{intern.supervisor.user.first_name} {intern.supervisor.user.last_name}".strip() or intern.supervisor.user.username
+                else:
+                    supervisor_name = "null"
+                    
+                intern_type = intern.get_internship_type_display() if hasattr(intern, 'get_internship_type_display') else intern.internship_type
+                start_date = intern.start_date.strftime("%Y-%m-%d") if intern.start_date else "null"
+                end_date = intern.end_date.strftime("%Y-%m-%d") if intern.end_date else "null"
+                
+                ws.append([name, email, dept, supervisor_name, intern_type, start_date, end_date])
+                
+            # Prepare response
+            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = 'attachment; filename=interns.xlsx'
+            wb.save(response)
+            
+            return response
+        except Exception as e:
+            print(f"Excel Export Error: {str(e)}")
+            return Response({"error": f"Internal Server Error during export: {str(e)}"}, status=500)
 
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer

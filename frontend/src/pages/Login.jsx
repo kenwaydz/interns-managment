@@ -2,6 +2,8 @@ import { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
+import logo from '../assets/logo.png';
+
 export const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -23,8 +25,8 @@ export const Login = () => {
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
             <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <span style={{ fontSize: '48px' }}>🏢</span>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '1rem' }}>IAMS Login</h2>
+                    <img src={logo} alt="Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '1rem' }} />
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Internes Manager</h2>
                     <p style={{ color: 'var(--text-muted)' }}>Sign in to continue</p>
                 </div>
                 

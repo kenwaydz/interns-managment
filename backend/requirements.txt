@@ -2,3 +2,6 @@ django
 djangorestframework
 djangorestframework-simplejwt
 django-cors-headers
+pymysql
+openpyxl
+python-dateutil

@@ -84,7 +84,7 @@ export const Register = () => {
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
             <div className="card" style={{ width: '100%', maxWidth: '500px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Project Management Registration</h2>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Internes Manager Registration</h2>
                     <p style={{ color: 'var(--text-muted)' }}>Create a new account</p>
                 </div>
 
