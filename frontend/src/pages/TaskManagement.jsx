@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
+import { MessageSquare, Send } from 'lucide-react';
 
 export const TaskManagement = () => {
     const { user } = useContext(AuthContext);
@@ -9,6 +10,9 @@ export const TaskManagement = () => {
     const [showModal, setShowModal] = useState(false);
     const [newTask, setNewTask] = useState({ title: '', description: '', intern: '' });
     const [taskReports, setTaskReports] = useState({});
+    const [comments, setComments] = useState({});
+    const [newComment, setNewComment] = useState({});
+    const [expandedComments, setExpandedComments] = useState({});
 
     useEffect(() => {
         const fetchData = async () => {
@@ -20,6 +24,14 @@ export const TaskManagement = () => {
                     const internsRes = await api.get('interns/');
                     setInterns(internsRes.data);
                 }
+
+                const commentsRes = await api.get('task-comments/');
+                const commentsMap = {};
+                commentsRes.data.forEach(c => {
+                    if (!commentsMap[c.task]) commentsMap[c.task] = [];
+                    commentsMap[c.task].push(c);
+                });
+                setComments(commentsMap);
             } catch (err) {
                 console.error(err);
             }
@@ -66,6 +78,23 @@ export const TaskManagement = () => {
         } catch (err) {
             console.error(err);
             alert("Error deleting task");
+        }
+    };
+
+    const handleAddComment = async (taskId) => {
+        const text = newComment[taskId];
+        if (!text || text.trim() === '') return;
+
+        try {
+            const res = await api.post('task-comments/', { task: taskId, content: text });
+            const updatedComments = { ...comments };
+            if (!updatedComments[taskId]) updatedComments[taskId] = [];
+            updatedComments[taskId].push(res.data);
+            setComments(updatedComments);
+            setNewComment({ ...newComment, [taskId]: '' });
+        } catch (err) {
+            console.error(err);
+            alert("Failed to post comment");
         }
     };
 
@@ -120,7 +149,7 @@ export const TaskManagement = () => {
 
             <div className="dashboard-grid animate-fade-in">
                 {tasks.map(task => (
-                    <div key={task.id} className="card" style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                    <div key={task.id} className="card" style={{display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem'}}>
                         <div>
                             <div className="flex justify-between items-center" style={{marginBottom: '0.5rem'}}>
                                 <h3 style={{fontWeight: 600, fontSize: '1.125rem'}}>{task.title}</h3>
@@ -141,7 +170,7 @@ export const TaskManagement = () => {
                         </div>
                         
                         {user.role === 'INTERN' && task.status !== 'COMPLETED' && (
-                            <div className="flex gap-2" style={{marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)'}}>
+                            <div className="flex gap-2" style={{borderTop: '1px solid var(--border)', paddingTop: '0.5rem'}}>
                                 {task.status === 'PENDING' && (
                                     <button onClick={() => updateStatus(task.id, 'IN_PROGRESS')} className="btn btn-primary" style={{flex: 1, fontSize: '0.875rem'}}>
                                         Start Task
@@ -165,10 +194,53 @@ export const TaskManagement = () => {
                                 )}
                             </div>
                         )}
+                        
+                        {/* Comments Section */}
+                        <div className="mt-auto border-t pt-3" style={{borderColor: 'var(--border)'}}>
+                            <button 
+                                className="flex items-center gap-2 text-sm text-blue-600 font-medium w-full text-left" 
+                                onClick={() => setExpandedComments({...expandedComments, [task.id]: !expandedComments[task.id]})}
+                            >
+                                <MessageSquare size={16} />
+                                {comments[task.id]?.length || 0} {comments[task.id]?.length === 1 ? 'Comment' : 'Comments'}
+                            </button>
+
+                            {expandedComments[task.id] && (
+                                <div className="mt-3 flex flex-col gap-3">
+                                    <div className="max-h-40 overflow-y-auto pr-1 flex flex-col gap-2">
+                                        {(comments[task.id] || []).map(comment => (
+                                            <div key={comment.id} className={`p-2 rounded-lg text-sm bg-gray-50 border border-gray-100`}>
+                                                <div className="font-semibold text-xs text-gray-600 mb-1">
+                                                    {comment.author_details?.first_name} {comment.author_details?.last_name}
+                                                </div>
+                                                <div className="text-gray-800 break-words">{comment.content}</div>
+                                            </div>
+                                        ))}
+                                        {(!comments[task.id] || comments[task.id].length === 0) && (
+                                            <div className="text-xs text-gray-500 italic text-center py-2">No comments yet.</div>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                        <input 
+                                            type="text" 
+                                            className="input-field text-sm py-1.5 px-3 flex-1" 
+                                            placeholder="Write a comment..." 
+                                            value={newComment[task.id] || ''}
+                                            onChange={e => setNewComment({...newComment, [task.id]: e.target.value})}
+                                            onKeyDown={e => e.key === 'Enter' && handleAddComment(task.id)}
+                                        />
+                                        <button className="bg-blue-600 text-white p-1.5 rounded hover:bg-blue-700 transition" onClick={() => handleAddComment(task.id)}>
+                                            <Send size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         {(user.role === 'ADMIN' || user.role === 'SUPERVISOR') && (
-                            <div className="flex justify-between items-center" style={{marginTop: 'auto', paddingTop: '1rem'}}>
-                                <button className="btn" style={{padding: '0.35rem 0.65rem', fontSize: '0.75rem', background: '#fee2e2', color: '#b91c1c'}} onClick={() => handleDeleteTask(task.id)}>
-                                    Delete
+                            <div className="flex justify-between items-center" style={{paddingTop: '0.5rem'}}>
+                                <button className="text-xs text-red-600 hover:text-red-800 font-medium" onClick={() => handleDeleteTask(task.id)}>
+                                    Delete Task
                                 </button>
                                 <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right'}}>
                                     Assigned by: {task.supervisor_details?.user?.first_name || 'Supervisor'}

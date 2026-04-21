@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Department, InternProfile, SupervisorProfile, Task, Evaluation
+from .models import Department, InternProfile, SupervisorProfile, Task, Evaluation, Attendance, TaskComment
 from accounts.serializers import UserSerializer
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -59,3 +59,21 @@ class EvaluationSerializer(serializers.ModelSerializer):
         model = Evaluation
         fields = ['id', 'score', 'feedback', 'created_at', 'intern_details', 'supervisor_details', 'intern']
         read_only_fields = ('supervisor',)
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    intern_details = InternProfileSerializer(source='intern', read_only=True)
+    intern = serializers.PrimaryKeyRelatedField(
+        queryset=InternProfile.objects.all(), write_only=True, required=False
+    )
+    
+    class Meta:
+        model = Attendance
+        fields = ['id', 'intern', 'intern_details', 'date', 'clock_in_time', 'clock_out_time']
+
+class TaskCommentSerializer(serializers.ModelSerializer):
+    author_details = UserSerializer(source='author', read_only=True)
+    author = serializers.PrimaryKeyRelatedField(read_only=True)
+    
+    class Meta:
+        model = TaskComment
+        fields = ['id', 'task', 'author', 'author_details', 'content', 'created_at']

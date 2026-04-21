@@ -9,6 +9,7 @@ import { InternManagement } from './pages/InternManagement';
 import { TaskManagement } from './pages/TaskManagement';
 import { Evaluations } from './pages/Evaluations';
 import { UserApprovals } from './pages/UserApprovals';
+import { AttendanceLog } from './pages/AttendanceLog';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             } />
             <Route path="tasks" element={<TaskManagement />} />
             <Route path="evaluations" element={<Evaluations />} />
+            <Route path="attendance" element={<AttendanceLog />} />
             <Route path="approvals" element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <UserApprovals />

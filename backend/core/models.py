@@ -63,3 +63,24 @@ class Evaluation(models.Model):
 
     def __str__(self):
         return f"Evaluation for {self.intern.user.username} by {self.supervisor.user.username}"
+
+class Attendance(models.Model):
+    intern = models.ForeignKey(InternProfile, on_delete=models.CASCADE, related_name='attendances')
+    date = models.DateField(auto_now_add=True)
+    clock_in_time = models.TimeField(null=True, blank=True)
+    clock_out_time = models.TimeField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ('intern', 'date')
+        
+    def __str__(self):
+        return f"{self.intern.user.username} - {self.date}"
+
+class TaskComment(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_comments')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Comment by {self.author.username} on {self.task.title}"

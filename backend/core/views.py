@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
 from django.http import HttpResponse
-from .models import Department, InternProfile, SupervisorProfile, Task, Evaluation
-from .serializers import DepartmentSerializer, InternProfileSerializer, SupervisorProfileSerializer, TaskSerializer, EvaluationSerializer
+from .models import Department, InternProfile, SupervisorProfile, Task, Evaluation, Attendance, TaskComment
+from .serializers import DepartmentSerializer, InternProfileSerializer, SupervisorProfileSerializer, TaskSerializer, EvaluationSerializer, AttendanceSerializer, TaskCommentSerializer
 from accounts.serializers import UserSerializer
 from django.contrib.auth import get_user_model
 import openpyxl
@@ -185,3 +185,72 @@ class EvaluationViewSet(viewsets.ModelViewSet):
             intern = serializer.validated_data.get('intern')
             supervisor = intern.supervisor if (intern and intern.supervisor) else SupervisorProfile.objects.first()
             serializer.save(supervisor=supervisor)
+
+class AttendanceViewSet(viewsets.ModelViewSet):
+    serializer_class = AttendanceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'ADMIN':
+            return Attendance.objects.select_related('intern', 'intern__user').all()
+        elif user.role == 'SUPERVISOR':
+            return Attendance.objects.select_related('intern', 'intern__user').filter(intern__supervisor__user=user)
+        elif user.role == 'INTERN':
+            return Attendance.objects.select_related('intern', 'intern__user').filter(intern__user=user)
+        return Attendance.objects.none()
+
+    @action(detail=False, methods=['post'])
+    def clock_in(self, request):
+        if request.user.role != 'INTERN':
+            return Response({"error": "Only interns can clock in"}, status=403)
+        try:
+            intern = InternProfile.objects.get(user=request.user)
+            import datetime
+            today = datetime.date.today()
+            attendance, created = Attendance.objects.get_or_create(intern=intern, date=today)
+            if attendance.clock_in_time:
+                return Response({"error": "Already clocked in today"}, status=400)
+            
+            attendance.clock_in_time = datetime.datetime.now().time()
+            attendance.save()
+            return Response(self.get_serializer(attendance).data)
+        except InternProfile.DoesNotExist:
+            return Response({"error": "Intern profile not found"}, status=404)
+
+    @action(detail=False, methods=['post'])
+    def clock_out(self, request):
+        if request.user.role != 'INTERN':
+            return Response({"error": "Only interns can clock out"}, status=403)
+        try:
+            intern = InternProfile.objects.get(user=request.user)
+            import datetime
+            today = datetime.date.today()
+            attendance = Attendance.objects.get(intern=intern, date=today)
+            if attendance.clock_out_time:
+                return Response({"error": "Already clocked out today"}, status=400)
+            
+            attendance.clock_out_time = datetime.datetime.now().time()
+            attendance.save()
+            return Response(self.get_serializer(attendance).data)
+        except Attendance.DoesNotExist:
+            return Response({"error": "No clock in record found for today"}, status=404)
+        except InternProfile.DoesNotExist:
+            return Response({"error": "Intern profile not found"}, status=404)
+
+class TaskCommentViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskCommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = TaskComment.objects.select_related('author', 'task').all()
+        # Filter comments for tasks related to user
+        if user.role == 'INTERN':
+            queryset = queryset.filter(task__intern__user=user)
+        elif user.role == 'SUPERVISOR':
+            queryset = queryset.filter(task__supervisor__user=user)
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)

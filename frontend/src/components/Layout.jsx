@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Users, LayoutDashboard, CheckSquare, LogOut, FileText } from 'lucide-react';
+import { Users, LayoutDashboard, CheckSquare, LogOut, FileText, Clock, UserCheck } from 'lucide-react';
 
 import logo from '../assets/logo.png';
 
@@ -33,6 +33,7 @@ export const Layout = () => {
                 </div>
                 <nav className="sidebar-nav flex-col">
                     <SidebarItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" />
+                    <SidebarItem to="/attendance" icon={<Clock size={20} />} label="Attendance" />
                     
                     {(user?.role === 'ADMIN' || user?.role === 'SUPERVISOR') && (
                         <SidebarItem to="/interns" icon={<Users size={20} />} label="Interns" />
@@ -40,6 +41,9 @@ export const Layout = () => {
                     
                     <SidebarItem to="/tasks" icon={<CheckSquare size={20} />} label="Tasks" />
                     <SidebarItem to="/evaluations" icon={<FileText size={20} />} label="Evaluations" />
+                    {user?.role === 'ADMIN' && (
+                        <SidebarItem to="/approvals" icon={<UserCheck size={20} />} label="Approvals" />
+                    )}
                 </nav>
             </aside>
             <main className="main-content">
